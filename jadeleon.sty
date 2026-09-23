@@ -1,0 +1,139 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{jadeleon}
+% Package options {{{*
+\newif\ifjalinenumbers
+\newif\ifjashowlabels
+
+\DeclareOption{draft}{%
+  \PassOptionsToPackage{draft}{fixme}%
+}
+\DeclareOption{final}{%
+  \PassOptionsToPackage{final}{fixme}%
+}
+
+\DeclareOption{linenumbers}{%
+  \jalinenumberstrue
+}
+\DeclareOption{nolinenumbers}{%
+  \jalinenumbersfalse
+}
+
+\DeclareOption{showlabels}{%
+  \jashowlabelstrue
+}
+\DeclareOption{noshowlabels}{%
+  \jashowlabelsfalse
+}
+
+% Defaults
+\ExecuteOptions{draft,linenumbers,showlabels}
+\ProcessOptions\relax
+% *}}}
+% Fixme {{{*
+\RequirePackage[normalem]{ulem}
+\RequirePackage[dvipsnames]{xcolor}
+\RequirePackage[inline,nomargin]{fixme}
+\fxsetup{theme=color}
+
+% Load xparse explicitly for its legacy `g` (optional braced group) argument.
+\RequirePackage{xparse}
+
+% One argument: comment (typewriter); starred: suggestion (normal font).
+% Two arguments: underline/comment; starred: cross out/replace.
+% The target text is always black. No three-argument form.
+\NewDocumentCommand{\flexfxnote}{m m m m}{%
+  \IfNoValueTF{#4}{%
+    \IfBooleanTF{#2}{#1{\normalfont #3}}{#1{\ttfamily #3}}%
+  }{%
+    \IfBooleanTF{#2}
+      {{\color{black}\sout{#3}}#1{\normalfont #4}}%
+      {{\color{black}\uline{#3}}#1{\ttfamily #4}}%
+  }%
+}
+
+\NewCommandCopy{\fxnoteoriginal}{\fxnote}
+
+\RenewDocumentCommand{\fxnote}{s m g}{%
+  \flexfxnote{\fxnoteoriginal}{#1}{#2}{#3}%
+}
+
+% Add a collaborator with one line:
+% \DeclareCommenter{command prefix}{HTML color}{signature}
+\ExplSyntaxOn
+\NewDocumentCommand{\DeclareCommenter}{m m m}
+{
+  \definecolor{#1color}{HTML}{#2}
+  \FXRegisterAuthor{#1}{a#1}{\color{#1color}#3}
+  \exp_args:Ncc \NewCommandCopy {#1noteoriginal} {#1note}
+  \exp_args:Nc \RenewDocumentCommand {#1note} {s m g}
+  {
+    \flexfxnote{\use:c{#1noteoriginal}}{##1}{##2}{##3}
+  }
+}
+\ExplSyntaxOff
+
+\DeclareCommenter{ja}{C82800}{JA}
+\DeclareCommenter{chatgpt}{7A1FA2}{ChaGPT}
+
+% Compatibility for existing comments in the manuscript.
+\newcommand{\jacomment}[2]{\janote{#1}{#2}}
+% *}}}
+% Show line numbers in PDF {{{*
+\RequirePackage[mathlines]{lineno}
+
+\renewcommand\linenumberfont{%
+  \normalfont\fontsize{7}{9}\selectfont\sffamily\color{gray}%
+}
+
+\setlength\linenumbersep{4pt}
+
+\ifjalinenumbers
+  \linenumbers
+\fi
+% *}}}
+% Hyperlinks {{{*
+\RequirePackage[
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+]{hyperref}
+% *}}}
+% Show labels {{{*
+\ifjashowlabels
+  \RequirePackage[inline]{showlabels}
+  \RequirePackage{rotating}
+
+  % T1 preserves literal underscores in label names printed by showlabels.
+  \renewcommand{\showlabelfont}{%
+    \fontencoding{T1}\selectfont
+    \sffamily\small
+    \color{gray!70}%
+  }
+
+  \renewcommand{\showlabelrefline}{%
+    \hrule width 0pt height 0ex depth 10pt
+  }
+
+  \let\oldshowlabel\showlabel
+
+  \renewcommand{\showlabelsetlabel}[1]{%
+    \raisebox{-1.5ex}{\showlabelfont #1}%
+  }
+\fi
+% *}}}
+% Commands {{{*
+\newcommand{\eref}[1]{eq.~(\ref{#1})}
+\newcommand{\sref}[1]{sec.~\ref{#1}}
+\newcommand{\fref}[1]{Fig.~\ref{#1}}
+\newcommand{\tref}[1]{table~\ref{#1}}
+
+\newcommand{\Eref}[1]{Eq.~(\ref{#1})}
+\newcommand{\Sref}[1]{Sec.~\ref{#1}}
+\newcommand{\Fref}[1]{Fig.~\ref{#1}}
+\newcommand{\Tref}[1]{Table~\ref{#1}}
+
+\newcommand{\unam}{Universidad Nacional Aut\'onoma de M\'exico, Ciudad de M\'exico 04510, Mexico}
+\newcommand{\ifunam}{Instituto de F\'{\i}sica, \unam}
+% *}}}
+\endinput
